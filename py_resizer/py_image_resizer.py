@@ -48,17 +48,34 @@ def validate_dir_path(img_path: Path | str) -> bool:
             '%s exists but is not a directory, kindly pass a valid directory path' % img_path)
 
 
-def get_img_paths_from_img_dir(img_dir: Path, extension: str = SUPPORTED_SUFFIXES[0]) -> list[Path]:
+def get_img_paths_from_img_dir(img_dir: Path, extensions: tuple[str] = SUPPORTED_SUFFIXES,
+                               *, recursive:bool=False, exit_if_empty: bool = True) -> list[Path]:
     """
     Returns a list of image file paths matching the
     specified extension within the given directory
     """
-    img_pattern = '*.%s' % extension
-    found_images = list(img_dir.rglob(img_pattern))
+    found_images = []
+    search_dir = img_dir.rglob if recursive else img_dir.glob
+    start_message = 'Recursively searching for image files at %s' if recursive else 'Searching for image files at %s'
+    print(start_message % img_dir)
+    for extension in extensions:
+        img_pattern = '*.%s' % extension
+        extension = extension.upper()
+        found_image = list(search_dir(img_pattern))
+        # If we are unable to find any of image of the
+        # extension type, we notify the user and continue
+        # the loop from the top
+        if not found_image:
+            print('No %s image found' % extension)
+            continue
+        found_images.extend(found_image)
+        print('Found %d %s image(s)' % (len(found_image), extension))
     if not found_images:
-        print('No %s files found in %s' % (extension, img_dir))
-        return []
-    print('Found %d images at %s' % (len(found_images), img_dir))
+        print('No image file was found' % (img_dir))
+        if exit_if_empty:
+            exit(0)
+    else:
+        print('Found %d image(s) at %s' % (len(found_images), img_dir))
     return found_images
 
 
@@ -117,7 +134,7 @@ def resize_image(img_path: Path | str, *, extension: str = None, img_height: int
 
 
 def resize_bulk_images(*, img_paths: tuple[Path] | tuple[str] = (), img_dir: Path | str = None,
-                       extensions: str = None, img_height: int = 200, img_width: int = 200) -> int:
+                       extensions: str = None, img_height: int = 200, img_width: int = 200) -> None:
     """
     Resizes an image file to the new height and width as well as
     a new extension type if extension is provided
@@ -168,6 +185,6 @@ def resize_bulk_images(*, img_paths: tuple[Path] | tuple[str] = (), img_dir: Pat
         thread.join()
 
 
-dirs = get_img_paths_from_img_dir(HOME_DIR.joinpath('downloads'))
-resize_bulk_images(img_paths=dirs)
-
+dirs = get_img_paths_from_img_dir(HOME_DIR.joinpath('Pictures'))
+# print(dirs)
+# resize_bulk_images(img_paths=dirs)

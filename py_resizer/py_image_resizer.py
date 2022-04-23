@@ -1,4 +1,3 @@
-from importlib.machinery import EXTENSION_SUFFIXES
 from PIL import Image
 from pathlib import Path
 from threading import Thread
@@ -31,7 +30,7 @@ def validate_image_path(img_path: Path | str) -> bool:
             '%s exists but is not a file, kindly pass a valid file path' % img_path)
     elif not img_path.suffix.lower()[1:] in (SUPPORTED_SUFFIXES):
         raise InvalidImageTypeError(
-            'The image file extension is not supported,'
+            'The image file extension is not supported, '
             'supported extensions must be one of the follwing %s' % get_supported_suffixes_as_str())
     return True
 
@@ -41,19 +40,26 @@ def validate_dir_path(img_path: Path | str) -> bool:
     Carries out basic validation on the directory provided
     """
     # Validate the image path, type and extension
-    if not(img_path.exists() and img_path.is_dir()):
-        return False
-    return True
+    if not img_path.exists():
+        raise FileNotFoundError(
+            '%s was not found in your path, kindly review the path provided' % img_path)
+    elif not img_path.is_dir():
+        raise NotADirectoryError(
+            '%s exists but is not a directory, kindly pass a valid directory path' % img_path)
 
 
-def get_img_paths_from_img_dir(img_dir: Path, extensions: tuple[str] = EXTENSION_SUFFIXES) -> list[Path]:
+def get_img_paths_from_img_dir(img_dir: Path, extension: str = SUPPORTED_SUFFIXES[0]) -> list[Path]:
     """
-    Returns a list of image files matching the specified extensions
-    within the given directory
+    Returns a list of image file paths matching the
+    specified extension within the given directory
     """
-    re_group_exts = '|'.join(extensions)
-    img_pattern = r'*/*.(%s)' % re_group_exts
-    return list(img_dir.glob(img_pattern))
+    img_pattern = '*.%s' % extension
+    found_images = list(img_dir.rglob(img_pattern))
+    if not found_images:
+        print('No %s files found in %s' % (extension, img_dir))
+        return []
+    print('Found %d images at %s' % (len(found_images), img_dir))
+    return found_images
 
 
 def resize_image(img_path: Path | str, *, extension: str = None, img_height: int = 200, img_width: int = 200) -> bool:
@@ -80,7 +86,16 @@ def resize_image(img_path: Path | str, *, extension: str = None, img_height: int
         img_path = Path(img_path)
     img_path = img_path.resolve()
     # perform basic validation
-    if validate_image_path(img_path):
+    error_message = None
+    try:
+        validate_image_path(img_path)
+    except InvalidImageTypeError as IET:
+        error_message = IET
+    except NotAFileError as NAF:
+        error_message = NAF
+    except FileNotFoundError as FNF:
+        error_message = FNF
+    else:
         image = Image.open(img_path)
         # if a new extension is required as output format
         # set the current file's extension type to it
@@ -97,8 +112,8 @@ def resize_image(img_path: Path | str, *, extension: str = None, img_height: int
         print('Resized image was saved at %s in %s format' %
               (img_path, img_format))
         return True
-    else:
-        return False
+    print(F'Image resizing failed for {img_path}...\n{error_message},\n')
+    return False
 
 
 def resize_bulk_images(*, img_paths: tuple[Path] | tuple[str] = (), img_dir: Path | str = None,
@@ -132,9 +147,8 @@ def resize_bulk_images(*, img_paths: tuple[Path] | tuple[str] = (), img_dir: Pat
 
     # we use the img_paths argument if it is provided,
     # use the img_dir if the img_paths is not
-    print(img_paths)
     image_paths = img_paths if img_paths else get_img_paths_from_img_dir(
-        img_dir, extensions=extensions or EXTENSION_SUFFIXES)
+        img_dir, extensions=extensions or SUPPORTED_SUFFIXES)
 
     kwargs = {
         'extension': extensions,
@@ -154,12 +168,6 @@ def resize_bulk_images(*, img_paths: tuple[Path] | tuple[str] = (), img_dir: Pat
         thread.join()
 
 
-dirs = (
-    HOME_DIR.joinpath('downloads\WhatsApp Image 2022-04-19 at 10.49.50 PM.jpeg'),
-    HOME_DIR.joinpath('downloads\WhatsApp Image 2022-04-20 at 1.11.04 AM.jpeg'),
-    HOME_DIR.joinpath('downloads\WhatsApp Image 2022-04-19 at 11.30.44 PM(1).jpeg'),
-    HOME_DIR.joinpath('downloads\WhatsApp Image 2022-04-19 at 11.30.44 PM.jpeg'),
-    HOME_DIR.joinpath('downloads\WhatsApp Image 2022-04-19 at 11.30.43 PM(1).jpeg')
-)
-
+dirs = get_img_paths_from_img_dir(HOME_DIR.joinpath('downloads'))
 resize_bulk_images(img_paths=dirs)
+

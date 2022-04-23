@@ -9,3 +9,9 @@ class MutualExclusionError(Exception):
 
 class MissingRequiredPathError(Exception):
     pass
+
+class InvalidImageTypeError(Exception):
+    pass
+
+class NotAFileError(Exception):
+    pass

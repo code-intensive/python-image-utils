@@ -1,12 +1,10 @@
-from PIL import Image
 from pathlib import Path
 from threading import Thread
-from exceptions import (
-    MutualExclusionError,
-    MissingRequiredPathError,
-    NotAFileError,
-    InvalidImageTypeError
-)
+from typing import Tuple, Union, List
+
+from PIL import Image
+
+from exceptions import *
 
 
 SUPPORTED_SUFFIXES = ('png', 'jpg', 'gif')
@@ -17,7 +15,7 @@ def get_supported_suffixes_as_str() -> str:
     return ', '.join(SUPPORTED_SUFFIXES[:-1]) + ' or ' + SUPPORTED_SUFFIXES[-1]
 
 
-def validate_image_path(img_path: Path | str) -> bool:
+def validate_image_path(img_path: Union[Path, str]) -> bool:
     """
     Carries out basic validation on the image path
     """
@@ -35,7 +33,7 @@ def validate_image_path(img_path: Path | str) -> bool:
     return True
 
 
-def validate_dir_path(img_path: Path | str) -> bool:
+def validate_dir_path(img_path: Union[Path, str]) -> bool:
     """
     Carries out basic validation on the directory provided
     """
@@ -48,12 +46,14 @@ def validate_dir_path(img_path: Path | str) -> bool:
             '%s exists but is not a directory, kindly pass a valid directory path' % img_path)
 
 
-def get_img_paths_from_img_dir(img_dir: Path, extensions: tuple[str] = SUPPORTED_SUFFIXES,
-                               *, recursive:bool=False, exit_if_empty: bool = True) -> list[Path]:
+def get_img_paths_from_img_dir(img_dir: Union[Path, str], *, extensions: Tuple[str] = SUPPORTED_SUFFIXES,
+                               recursive:bool=False, exit_if_empty: bool = True) -> List[Path]:
     """
     Returns a list of image file paths matching the
     specified extension within the given directory
     """
+    if isinstance(img_dir, str):
+        img_dir = Path(img_dir)
     found_images = []
     search_dir = img_dir.rglob if recursive else img_dir.glob
     start_message = 'Recursively searching for image files at %s' if recursive else 'Searching for image files at %s'
@@ -79,7 +79,7 @@ def get_img_paths_from_img_dir(img_dir: Path, extensions: tuple[str] = SUPPORTED
     return found_images
 
 
-def resize_image(img_path: Path | str, *, extension: str = None, img_height: int = 200, img_width: int = 200) -> bool:
+def resize_image(img_path: Union[Path, str], *, extension: str = None, img_height: int = 200, img_width: int = 200) -> bool:
     """
     Resizes an image file to the new height and width as well as
     a new extension type if extension is provided
@@ -133,13 +133,13 @@ def resize_image(img_path: Path | str, *, extension: str = None, img_height: int
     return False
 
 
-def resize_bulk_images(*, img_paths: tuple[Path] | tuple[str] = (), img_dir: Path | str = None,
+def resize_bulk_images(*, img_paths: Union[Tuple[Path], Tuple[str]] = (), img_dir: Union[Path, str ]= None,
                        extensions: str = None, img_height: int = 200, img_width: int = 200) -> None:
     """
     Resizes an image file to the new height and width as well as
     a new extension type if extension is provided
 
-    `img_paths`:`tuple[Path]` | `tuple[str]` -> Tuple containing paths of images to be processed
+    `img_paths`:`Tuple[Path]` | `Tuple[str]` -> Tuple containing paths of images to be processed
 
     `img_dir`:`Path | str` -> Folder containing images to be processed
 
@@ -183,8 +183,3 @@ def resize_bulk_images(*, img_paths: tuple[Path] | tuple[str] = (), img_dir: Pat
 
     for thread in threads:
         thread.join()
-
-
-dirs = get_img_paths_from_img_dir(HOME_DIR.joinpath('Pictures'))
-# print(dirs)
-# resize_bulk_images(img_paths=dirs)

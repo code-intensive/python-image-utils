@@ -4,6 +4,13 @@ Module containing all exceptions
 
 """
 
+__all__ = (
+    'MutualExclusionError',
+    'MissingRequiredPathError',
+    'NotAFileError',
+    'InvalidImageTypeError',
+)
+
 class MutualExclusionError(Exception):
     pass
 

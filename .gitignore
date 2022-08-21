@@ -1,1 +1,4 @@
-__pycache__
+py_resizer/__pycache__
+.vscode
+.DS_Store
+py_resizer/__pycache__/exceptions.cpython-310.pyc

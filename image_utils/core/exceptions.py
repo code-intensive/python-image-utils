@@ -1,8 +1,4 @@
-"""
-
-Module containing all exceptions
-
-"""
+""" Module containing all exceptions """
 
 __all__ = (
     'MutualExclusionError',

@@ -1,4 +1,6 @@
-py_resizer/__pycache__
+__pycache__
 .vscode
 .DS_Store
 py_resizer/__pycache__/exceptions.cpython-310.pyc
+code-intensive.jpeg
+main.py
